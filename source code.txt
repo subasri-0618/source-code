@@ -1,0 +1,54 @@
+import cv2
+import numpy as np
+import time
+class PIDController:
+def __init__(self, kp, ki, kd):
+self.kp = kp
+self.ki = ki
+self.kd = kd
+self.last_error = 0
+self.integral = 0
+def compute(self, error, dt):
+self.integral += error * dt
+derivative = (error - self.last_error) / dt if dt > 0 else 0
+output = self.kp * error + self.ki * self.integral + self.kd * derivative
+self.last_error = error
+return output
+def get_simulated_distance():
+return np.random.randint(10, 100)
+def process_frame(frame):
+hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+mask = cv2.inRange(hsv, (0, 0, 0), (180, 255, 50))
+return mask
+def autonomous_drive():
+cap = cv2.VideoCapture(0)
+pid = PIDController(0.5, 0.01, 0.1)
+last_time = time.time()
+while True:
+ret, frame = cap.read()
+if not ret:
+break
+mask = process_frame(frame)
+M = cv2.moments(mask)
+height, width = frame.shape[:2]
+distance = get_simulated_distance()
+if distance < 20:
+print("Obstacle too close! Stopping vehicle.")
+continue
+if M["m00"] > 0:
+cx = int(M["m10"] / M["m00"])
+error = cx - width // 2
+dt = time.time() - last_time
+correction = pid.compute(error, dt)
+last_time = time.time()
+print(f"Line detected. Correction: {correction:.2f}")
+else:
+print("Line lost. Searching...")
+cv2.imshow("Frame", frame)
+cv2.imshow("Line Mask", mask)
+if cv2.waitKey(1) & 0xFF == ord('q'):
+break
+cap.release()
+cv2.destroyAllWindows()
+if __name__ == "__main__":
+autonomous_drive()
